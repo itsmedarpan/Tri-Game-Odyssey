@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tiktactoe',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +50,14 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'firstProject.wsgi.application'
+
+ASGI_APPLICATION = 'firstProject.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    },
+}
 
 DATABASES = {
     'default': {

@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tri-Game Odyssey - Tic Tac Toe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .room-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #cbd5e0;
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.connected {
+            background: #48bb78;
+            box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+        }
+
+        .status-dot.connecting {
+            background: #ed8936;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.error {
+            background: #f56565;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: #ffffff;
+            border: 3px solid #e2e8f0;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #2d3748;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.4s ease;
+        }
+
+        .cell:hover:not(:disabled) {
+            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+        }
+
+        .cell:hover:not(:disabled)::before {
+            width: 120%;
+            height: 120%;
+        }
+
+        .cell:disabled {
+            cursor: not-allowed;
+            background: #f7fafc;
+            border-color: #cbd5e0;
+        }
+
+        .cell.x {
+            color: #667eea;
+        }
+
+        .cell.o {
+            color: #764ba2;
+        }
+
+        .cell.winning {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            animation: winPulse 0.6s ease;
+        }
+
+        @keyframes winPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .game-status {
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-message {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #2d3748;
+            padding: 12px 24px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .status-message.waiting {
+            background: #fef5e7;
+            color: #dd6b20;
+            border: 1px solid #fbd38d;
+        }
+
+        .status-message.your-turn {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        .status-message.opponent-turn {
+            background: #e6fffa;
+            color: #234e52;
+            border: 1px solid #81e6d9;
+        }
+
+        .status-message.winner {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            border: none;
+            animation: celebrate 0.8s ease;
+        }
+
+        .status-message.draw {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+            color: white;
+            border: none;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 20px rgba(72, 187, 120, 0.3); }
+            to { box-shadow: 0 0 30px rgba(72, 187, 120, 0.6); }
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
+            75% { transform: scale(1.05); }
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .player-symbol {
+            font-size: 2rem;
+            font-weight: 700;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-x .player-symbol {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .player-o .player-symbol {
+            background: linear-gradient(135deg, #764ba2, #f093fb);
+            color: white;
+        }
+
+        .player-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .player.active .player-symbol {
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            .cell {
+                font-size: 2.5rem;
+            }
+
+            .game-info {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header class="header">
+            <h1 class="title">Tic Tac Toe</h1>
+            <p class="subtitle">Real-time multiplayer game</p>
+        </header>
+
+        <div class="game-info">
+            <div class="room-info">
+                <span class="room-badge" id="roomLabel">Room: room1</span>
+            </div>
+            <div class="connection-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="connectionStatus">Connecting...</span>
+            </div>
+        </div>
+
+        <div class="player-info">
+            <div class="player player-x" id="playerX">
+                <div class="player-symbol">X</div>
+                <div class="player-name">Player X</div>
+            </div>
+            <div class="player player-o" id="playerO">
+                <div class="player-symbol">O</div>
+                <div class="player-name">Player O</div>
+            </div>
+        </div>
+
+        <div class="game-status">
+            <div class="status-message waiting" id="gameStatus">
+                <span class="loading"></span>
+                Waiting for connection...
+            </div>
+        </div>
+
+        <div class="game-board" id="board">
+            <button class="cell" data-index="0"></button>
+            <button class="cell" data-index="1"></button>
+            <button class="cell" data-index="2"></button>
+            <button class="cell" data-index="3"></button>
+            <button class="cell" data-index="4"></button>
+            <button class="cell" data-index="5"></button>
+            <button class="cell" data-index="6"></button>
+            <button class="cell" data-index="7"></button>
+            <button class="cell" data-index="8"></button>
+        </div>
+
+        <div class="game-controls">
+            <button class="btn btn-primary" id="resetBtn" disabled>Reset Game</button>
+            <button class="btn btn-secondary" id="newGameBtn">New Game</button>
+        </div>
+    </div>
+
+    <script>
+        // Game configuration
+        const roomName = 'room1';
+        let playerSymbol = null; // Will be assigned by server
+        let opponentSymbol = null;
+        let connectedPlayers = 0;
+
+        // DOM elements
+        const statusLabel = document.getElementById('connectionStatus');
+        const statusDot = document.getElementById('statusDot');
+        const roomLabel = document.getElementById('roomLabel');
+        const gameStatus = document.getElementById('gameStatus');
+        const cells = Array.from(document.querySelectorAll('.cell'));
+        const resetBtn = document.getElementById('resetBtn');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const playerX = document.getElementById('playerX');
+        const playerO = document.getElementById('playerO');
+
+        // Game state
+        let gameBoard = Array(9).fill(null);
+        let currentPlayer = 'X';
+        let gameActive = false;
+        let isMyTurn = false;
+
+        // Initialize
+        roomLabel.textContent = `Room: ${roomName}`;
+
+        // WebSocket connection
+        const socket = new WebSocket(`ws://${window.location.host}/ws/tictactoe/${roomName}/`);
+
+        socket.addEventListener('open', () => {
+            updateConnectionStatus('connecting', 'Connected');
+            updateGameStatus('waiting', 'Waiting for player assignment...');
+        });
+
+        socket.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'player_connected') {
+                // Assign player symbol based on server response
+                if (data.your_symbol) {
+                    playerSymbol = data.your_symbol;
+                    opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
+                    connectedPlayers = data.connected_count;
+                    
+                    if (connectedPlayers === 1) {
+                        updateGameStatus('waiting', `You are Player ${playerSymbol}. Waiting for opponent...`);
+                    } else if (connectedPlayers === 2) {
+                        gameActive = true;
+                        isMyTurn = playerSymbol === 'X';
+                        updateGameStatus(isMyTurn ? 'your-turn' : 'opponent-turn', 
+                                       isMyTurn ? `Your turn (${playerSymbol})` : `Opponent's turn (${opponentSymbol})`);
+                    }
+                }
+            } else if (data.type === 'move') {
+                if (data.move !== undefined && data.player !== undefined) {
+                    handleOpponentMove(data.move, data.player);
+                }
+            } else if (data.type === 'reset') {
+                resetGame();
+            }
+        });
+
+        socket.addEventListener('error', () => {
+            updateConnectionStatus('error', 'Connection error');
+            updateGameStatus('error', 'Connection error');
+        });
+
+        socket.addEventListener('close', () => {
+            updateConnectionStatus('error', 'Disconnected');
+            updateGameStatus('error', 'Disconnected from server');
+        });
+
+        // Event listeners
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                const index = Number(cell.dataset.index);
+                if (!gameActive || !isMyTurn || cell.disabled || socket.readyState !== WebSocket.OPEN || !playerSymbol) {
+                    return;
+                }
+                makeMove(index);
+            });
+        });
+
+        resetBtn.addEventListener('click', resetGame);
+        newGameBtn.addEventListener('click', newGame);
+
+        // Functions
+        function updateConnectionStatus(status, message) {
+            statusLabel.textContent = message;
+            statusDot.className = `status-dot ${status}`;
+        }
+
+        function updateGameStatus(type, message) {
+            gameStatus.className = `status-message ${type}`;
+            gameStatus.textContent = message;
+        }
+
+        function makeMove(cellIndex) {
+            if (gameBoard[cellIndex] !== null) return;
+
+            gameBoard[cellIndex] = playerSymbol;
+            updateCell(cellIndex, playerSymbol);
+            socket.send(JSON.stringify({
+                type: 'move',
+                move: cellIndex,
+                player: playerSymbol,
+            }));
+
+            isMyTurn = false;
+            updateTurnIndicator();
+            checkGameEnd();
+        }
+
+        function handleOpponentMove(cellIndex, player) {
+            if (gameBoard[cellIndex] !== null) return;
+
+            gameBoard[cellIndex] = player;
+            updateCell(cellIndex, player);
+            isMyTurn = true;
+            updateTurnIndicator();
+            checkGameEnd();
+        }
+
+        function updateCell(index, symbol) {
+            const cell = cells[index];
+            cell.textContent = symbol;
+            cell.disabled = true;
+            cell.classList.add(symbol.toLowerCase());
+        }
+
+        function updateTurnIndicator() {
+            playerX.classList.toggle('active', currentPlayer === 'X' && isMyTurn);
+            playerO.classList.toggle('active', currentPlayer === 'O' && !isMyTurn);
+
+            if (gameActive && playerSymbol) {
+                if (isMyTurn) {
+                    updateGameStatus('your-turn', `Your turn (${playerSymbol})`);
+                } else {
+                    updateGameStatus('opponent-turn', `Opponent's turn (${opponentSymbol})`);
+                }
+            }
+        }
+
+        function checkGameEnd() {
+            const winner = checkWinner();
+            if (winner) {
+                gameActive = false;
+                highlightWinningCells(winner.pattern);
+                if (winner.player === playerSymbol) {
+                    updateGameStatus('winner', '🎉 You won!');
+                } else {
+                    updateGameStatus('winner', 'Opponent won!');
+                }
+                resetBtn.disabled = false;
+            } else if (gameBoard.every(cell => cell !== null)) {
+                gameActive = false;
+                updateGameStatus('draw', 'It\'s a draw!');
+                resetBtn.disabled = false;
+            }
+        }
+
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                [0, 4, 8], [2, 4, 6] // diagonals
+            ];
+
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+                    return { player: gameBoard[a], pattern };
+                }
+            }
+            return null;
+        }
+
+        function highlightWinningCells(pattern) {
+            pattern.forEach(index => {
+                cells[index].classList.add('winning');
+            });
+        }
+
+        function resetGame() {
+            gameBoard = Array(9).fill(null);
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.disabled = false;
+                cell.classList.remove('x', 'o', 'winning');
+            });
+            currentPlayer = 'X';
+            isMyTurn = playerSymbol === 'X';
+            gameActive = true;
+            resetBtn.disabled = true;
+            updateTurnIndicator();
+
+            // Notify server about reset
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    type: 'reset'
+                }));
+            }
+        }
+
+        function newGame() {
+            resetGame();
+            // Additional logic for starting a new game could go here
+        }
+
+        // Initialize turn indicator
+        if (playerSymbol) {
+            updateTurnIndicator();
+        }
+    </script>
+</body>
+</html>
